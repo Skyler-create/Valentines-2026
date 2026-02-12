@@ -304,7 +304,7 @@ function prevMem() {
 
 function restartAuto() {
   if (memTimer) clearInterval(memTimer);
-  memTimer = setInterval(nextMem, 3500);
+  memTimer = setInterval(nextMem, 4500);
 }
 
 memoryBtn.addEventListener("click", () => {
