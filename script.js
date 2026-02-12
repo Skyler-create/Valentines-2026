@@ -1,3 +1,4 @@
+// Version: 2024-02-12-fixed
 // ----- Elements -----
 const zone = document.getElementById("zone");
 const yesBtn = document.getElementById("yesBtn");
@@ -19,6 +20,7 @@ const memoryBtn = document.getElementById("memoryBtn");
 const memoryLane = document.getElementById("memoryLane");
 const closeMemoryBtn = document.getElementById("closeMemoryBtn");
 const memoryImg = document.getElementById("memoryImg");
+const memoryVideo = document.getElementById("memoryVideo");
 const memoryCaption = document.getElementById("memoryCaption");
 const prevMemory = document.getElementById("prevMemory");
 const nextMemory = document.getElementById("nextMemory");
@@ -104,10 +106,12 @@ enterBtn.addEventListener("click", async () => {
 // ----- Typewriter -----
 function typeWriter(el, text, speed = 16) {
   el.textContent = "";
+  el.setAttribute('dir', 'ltr');
   let i = 0;
+  const chars = Array.from(text); // Handle multi-byte characters properly
   const t = setInterval(() => {
-    el.textContent += text[i++];
-    if (i >= text.length) clearInterval(t);
+    el.textContent = chars.slice(0, ++i).join('');
+    if (i >= chars.length) clearInterval(t);
   }, speed);
 }
 
@@ -154,8 +158,8 @@ function moveNo(px, py) {
   const roasts = [
     "Nice try 😈",
     "Nope 😌",
-    "You thought 😭",
-    "That button is allergic to you 💀",
+    "Haha you wish 😭",
+    "You're never getting it 💀",
     "Just click yes pls 💗"
   ];
   hint.textContent = roasts[Math.floor(Math.random() * roasts.length)];
@@ -194,12 +198,20 @@ loveSlider.addEventListener("input", () => {
   }
 });
 
-// ----- Memory Lane setup (YOU rename images/captions) -----
+// ----- Memory Lane setup (YOU rename images/captions and add videos) -----
+// type can be "image" or "video"
 const memories = [
-  { src: "img/memory1.jpg", caption: "Memory #1 — replace this caption 💗" },
-  { src: "img/memory2.jpg", caption: "Memory #2 — replace this caption 😈" },
-  { src: "img/memory3.jpg", caption: "Memory #3 — replace this caption ✨" },
-  { src: "img/memory4.jpg", caption: "Memory #4 — replace this caption 💞" }
+  { type: "image", src: "img/1.jpg", caption: "💗" },
+  { type: "video", src: "img/1.mp4", caption: "😈" },
+
+  { type: "image", src: "img/2.jpg", caption: "✨" },
+  { type: "video", src: "img/2.mp4", caption: "💞" },
+
+  { type: "image", src: "img/3.jpg", caption: "💖" },
+  { type: "video", src: "img/3.mp4", caption: "💗" },
+
+  { type: "image", src: "img/4.jpg", caption: "😌" },
+  { type: "video", src: "img/4.mp4", caption: "I LOVE YOU" }
 ];
 
 let memIndex = 0;
@@ -217,22 +229,63 @@ function renderDots() {
 function renderThumbs() {
   thumbs.innerHTML = "";
   memories.forEach((m, i) => {
-    const img = document.createElement("img");
-    img.className = "thumb" + (i === memIndex ? " active" : "");
-    img.src = m.src;
-    img.alt = `Memory thumbnail ${i + 1}`;
-    img.addEventListener("click", () => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "thumb-wrapper" + (i === memIndex ? " active" : "");
+    
+    if (m.type === "video") {
+      // For videos, create a video thumbnail
+      const video = document.createElement("video");
+      video.className = "thumb";
+      video.src = m.src;
+      video.muted = true;
+      video.preload = "metadata";
+      
+      // Add play icon overlay
+      const playIcon = document.createElement("div");
+      playIcon.className = "play-icon";
+      playIcon.innerHTML = "▶";
+      
+      wrapper.appendChild(video);
+      wrapper.appendChild(playIcon);
+    } else {
+      // For images, use img element
+      const img = document.createElement("img");
+      img.className = "thumb";
+      img.src = m.src;
+      img.alt = `Memory thumbnail ${i + 1}`;
+      wrapper.appendChild(img);
+    }
+    
+    wrapper.addEventListener("click", () => {
       memIndex = i;
       showMemory(memIndex);
       restartAuto();
     });
-    thumbs.appendChild(img);
+    thumbs.appendChild(wrapper);
   });
 }
 
 function showMemory(i) {
   const m = memories[i];
-  memoryImg.src = m.src;
+  
+  // Pause any currently playing video
+  if (memoryVideo.style.display === "block") {
+    memoryVideo.pause();
+  }
+  
+  // Show/hide based on type
+  if (m.type === "video") {
+    memoryImg.style.display = "none";
+    memoryVideo.style.display = "block";
+    memoryVideo.querySelector("source").src = m.src;
+    memoryVideo.load();
+    memoryVideo.play().catch(() => {}); // Auto-play if possible
+  } else {
+    memoryVideo.style.display = "none";
+    memoryImg.style.display = "block";
+    memoryImg.src = m.src;
+  }
+  
   memoryCaption.textContent = m.caption;
 
   renderDots();
@@ -263,6 +316,7 @@ memoryBtn.addEventListener("click", () => {
 
 closeMemoryBtn.addEventListener("click", () => {
   memoryLane.hidden = true;
+  memoryVideo.pause(); // Stop any playing video
   if (memTimer) clearInterval(memTimer);
 });
 
@@ -293,49 +347,45 @@ yesBtn.addEventListener("click", () => {
   hint.style.display = "none";
   result.style.display = "block";
 
-  // Smooth scroll to result section
   setTimeout(() => {
-    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    result.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 100);
 
   resizeConfettiCanvas();
   fullScreenConfetti();
 
-  // playful -> romantic
-  const playful =
-`OKAYYYYY 😭💖
+  const fullLetter = `My Sweet Little Cassie
 
-You’re my favorite person to talk to.
-My favorite person to annoy.
-And definitely my favorite person to love.
+You're my favorite distraction.
+My favorite notification to stay up late for.
+My favorite voice to fall asleep to.
 
-But okay jokes aside…`;
+And yes... I would choose you a million times over my bathroom.
 
-  typeWriter(letterEl, playful, 16);
+7,588 miles apart,
+but still the safest place I know and the only person I want to love.
+
+You actually mean so much to me.
+Like in a calm, safe, I-need-you-in-my-life kind of way.
+
+I love how you make everything feel warmer,
+especially when I'm holding you close and you're melting into me
+and nothing else in the world matters.
+
+I'm really lucky I get to call you mine. 💗`;
+
+  typeWriter(letterEl, fullLetter, 18);
 
   setTimeout(() => {
-    // softer romantic add-on (still playful)
-    const romantic =
-`\n\nYou actually mean a lot to me.
-Like… in a calm, safe, I-want-you-in-my-life way.
+    letterEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 1000);
 
-I love how you make everything feel warmer.
-And I’m really lucky I get to call you mine. 💗`;
-
-    typeWriter(letterEl, playful + romantic, 20);
-    
-    // Gently scroll as text grows
-    setTimeout(() => {
-      letterEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 1000);
-  }, 2500);
-
-  // Final fade scene after a bit
   setTimeout(() => {
     const finalScreen = document.createElement("div");
     finalScreen.style.position = "fixed";
     finalScreen.style.inset = "0";
-    finalScreen.style.background = "linear-gradient(180deg, rgba(0,0,0,.88), rgba(40,0,25,.95))";
+    finalScreen.style.background =
+      "linear-gradient(180deg, rgba(0,0,0,.88), rgba(40,0,25,.95))";
     finalScreen.style.color = "white";
     finalScreen.style.display = "flex";
     finalScreen.style.justifyContent = "center";
@@ -357,12 +407,11 @@ And I’m really lucky I get to call you mine. 💗`;
       </div>
     `;
     document.body.appendChild(finalScreen);
-
     finalScreen.addEventListener("click", () => finalScreen.remove());
   }, 14000);
-});
+}); // ✅ CLOSES the yesBtn listener
 
-// ----- Easter egg: tap 5 times -----
+// ✅ Easter egg belongs OUTSIDE
 let tapCount = 0;
 document.addEventListener("click", () => {
   tapCount++;
